@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Ashiato</title>
+  <meta name="theme-color" content="#0f1220">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ashiato">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="status" class="pill">
+    <span id="rec-dot" class="dot"></span>
+    <span id="stat-text">読み込み中…</span>
+  </div>
+
+  <div id="controls">
+    <button id="btn-rec" class="fab" title="記録の開始/停止" aria-label="記録の開始/停止">
+      <svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="7" fill="currentColor"/></svg>
+    </button>
+    <button id="btn-locate" class="fab" title="現在地" aria-label="現在地">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+    </button>
+    <button id="btn-settings" class="fab" title="設定" aria-label="設定">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </div>
+
+  <div id="panel" hidden>
+    <div class="panel-head">
+      <h2>設定</h2>
+      <button id="btn-close" class="icon-btn" aria-label="閉じる">✕</button>
+    </div>
+
+    <section>
+      <h3>表示</h3>
+      <label class="row">影の濃さ <input id="opt-opacity" type="range" min="0.3" max="0.95" step="0.05"></label>
+      <label class="row">晴らす半径 <span><input id="opt-radius" type="number" min="10" max="500" step="5"> m</span></label>
+    </section>
+
+    <section>
+      <h3>記録</h3>
+      <label class="row">記録中は画面をつけたままにする <input id="opt-wakelock" type="checkbox"></label>
+      <label class="row">精度がこれより悪い位置は無視 <span><input id="opt-accuracy" type="number" min="10" max="1000" step="10"> m</span></label>
+      <p class="note">ブラウザの制約で、記録はアプリが画面に表示されている間だけ行われます。</p>
+    </section>
+
+    <section>
+      <h3>同期（GitHub Gist）</h3>
+      <label class="col">GitHubトークン（Gist の読み書き権限）
+        <input id="opt-token" type="password" autocomplete="off" placeholder="github_pat_...">
+      </label>
+      <label class="col">Gist ID（空欄なら初回同期で自動作成）
+        <input id="opt-gist" type="text" autocomplete="off" placeholder="例: 3f2a...">
+      </label>
+      <label class="row">自動で同期する <input id="opt-autosync" type="checkbox"></label>
+      <div class="btns">
+        <button id="btn-sync" class="btn primary">今すぐ同期</button>
+      </div>
+      <p id="sync-msg" class="note"></p>
+    </section>
+
+    <section>
+      <h3>データ</h3>
+      <div class="btns">
+        <button id="btn-export" class="btn">エクスポート</button>
+        <button id="btn-import" class="btn">インポート（.json / .gpx）</button>
+        <input id="file-import" type="file" accept=".json,.gpx,application/json,application/gpx+xml" multiple hidden>
+      </div>
+      <div class="btns">
+        <button id="btn-clear" class="btn danger">この端末のデータを消去</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
