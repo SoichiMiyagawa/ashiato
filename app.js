@@ -9,7 +9,6 @@ const Q = 1e-4;                 // セルの大きさ（度）
 const LON_SPAN = 3600001;       // キー = latIdx * LON_SPAN + lonIdx
 const TILE = 256;
 const EARTH_CIRC = 40075016.686;
-const MIN_R_PX = 2.5;           // ズームアウト時も見えるように最低半径を確保
 const INTERP_MAX_DIST = 5000;   // これより離れた連続点は線で結ばない (m)
 const INTERP_MAX_GAP = 10 * 60e3; // これより時間が空いた連続点も結ばない (ms)
 const INTERP_STEP = 8;          // 補間の間隔 (m)
@@ -39,6 +38,7 @@ function lsSet(key, value) {
 const settings = Object.assign({
   opacity: 0.78,
   radius: 40,
+  minPx: 7,        // 縮小しても行った場所がわかるよう、画面上でこの半径(px)より小さくしない
   wakeLock: true,
   maxAccuracy: 100,
   token: '',
@@ -207,7 +207,7 @@ function drawFogTile(canvas, coords) {
   const tx = ((coords.x % n) + n) % n;
   const ox = tx * TILE, oy = coords.y * TILE;
   const mpp = EARTH_CIRC / world; // 赤道での m/px
-  const rOf = lat => Math.max(MIN_R_PX, settings.radius / (mpp * Math.cos(toRad(lat))));
+  const rOf = lat => Math.max(settings.minPx, settings.radius / (mpp * Math.cos(toRad(lat))));
 
   const latTop = yToLat(oy, world), latBot = yToLat(oy + TILE, world);
   const margin = rOf(Math.min(85, Math.max(Math.abs(latTop), Math.abs(latBot)))) + 1;
@@ -569,10 +569,11 @@ $('btn-clear').onclick = () => {
 /* ---------- settings panel ---------- */
 
 function bindSettings() {
-  const op = $('opt-opacity'), rad = $('opt-radius'), wl = $('opt-wakelock'), acc = $('opt-accuracy');
+  const op = $('opt-opacity'), rad = $('opt-radius'), mp = $('opt-minpx'), wl = $('opt-wakelock'), acc = $('opt-accuracy');
   const tok = $('opt-token'), gist = $('opt-gist'), as = $('opt-autosync');
   op.value = settings.opacity;
   rad.value = settings.radius;
+  mp.value = settings.minPx;
   wl.checked = settings.wakeLock;
   acc.value = settings.maxAccuracy;
   tok.value = settings.token;
@@ -586,6 +587,7 @@ function bindSettings() {
     saveSettings();
     fog.redrawAll();
   };
+  mp.oninput = () => { settings.minPx = +mp.value; saveSettings(); scheduleRedraw(); };
   wl.onchange = () => { settings.wakeLock = wl.checked; saveSettings(); wl.checked ? acquireWakeLock() : releaseWakeLock(); };
   acc.onchange = () => { settings.maxAccuracy = Math.max(10, +acc.value || 100); acc.value = settings.maxAccuracy; saveSettings(); };
   tok.onchange = () => { settings.token = tok.value.trim(); saveSettings(); };

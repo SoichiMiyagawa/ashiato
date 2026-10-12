@@ -1,5 +1,5 @@
 // アプリ本体だけキャッシュしてオフラインでも起動できるようにする（地図タイルと API は素通し）
-const CACHE = 'ashiato-v1';
+const CACHE = 'ashiato-v2';
 const ASSETS = [
   './',
   './index.html',
